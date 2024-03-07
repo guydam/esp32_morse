@@ -418,7 +418,7 @@ def main_game_loop(difficulty, high_score, sound_on):
             break
 
         ge.gen_new_word()
-        sleep_ms(300)
+        sleep_ms(450)
 
         code_pixel_width = ge.calculate_code_pixel_count(False)
         code_x_pos = int((SCREEN_WIDTH - code_pixel_width) / 2)
