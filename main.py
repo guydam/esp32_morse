@@ -2,13 +2,15 @@ import math
 import random
 
 import time
-from machine import Pin, SoftI2C, RTC
+from machine import Pin, SoftI2C, RTC, PWM
 import ssd1306
 from time import sleep_ms
 
 i2c = SoftI2C(scl=Pin(22), sda=Pin(21), freq=4000000)
 display = ssd1306.SSD1306_I2C(128, 64, i2c)  # display object
 button = Pin(4, Pin.IN, Pin.PULL_UP)
+buzzer_pin = Pin(23, Pin.OUT)
+buzzer_pwm = PWM(buzzer_pin)
 
 SCREEN_WIDTH = display.width
 SCREEN_HEIGHT = display.height
@@ -48,6 +50,13 @@ GAME_OVER_SPLASH_SCREEN_DISPLAY_MS = 3500
 ANIMATION_SPEED = 2
 SIGNAL_ANIMATION_MAX_RADIUS = 20
 HIGH_SCORE_FILE_NAME = 'morse_hs.txt'
+
+
+def buzz(duration_ms, frequency):
+    buzzer_pwm.freq(frequency)
+    buzzer_pwm.duty(512)
+    sleep_ms(duration_ms)
+    buzzer_pwm.duty(0)
 
 
 class GameEngine:
