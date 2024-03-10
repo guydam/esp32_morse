@@ -2,6 +2,8 @@ import math
 import random
 
 import time
+import _thread
+
 from machine import Pin, SoftI2C, RTC, PWM
 import ssd1306
 from time import sleep_ms
@@ -51,12 +53,19 @@ ANIMATION_SPEED = 2
 SIGNAL_ANIMATION_MAX_RADIUS = 20
 HIGH_SCORE_FILE_NAME = 'morse_hs.txt'
 
+BUZZ_SHOT_CLICK_FREQ_HZ = 800
+BUZZ_SHOT_CLICK_DUR_MS = 200
+
 
 def buzz(duration_ms, frequency):
     buzzer_pwm.freq(frequency)
     buzzer_pwm.duty(512)
     sleep_ms(duration_ms)
     buzzer_pwm.duty(0)
+
+
+def buzz_thread(duration_ms, frequency):
+    _thread.start_new_thread(buzz, (duration_ms, frequency))
 
 
 class GameEngine:
@@ -226,6 +235,8 @@ def main_menu_loop():
     start_click = False
     start_click_tick = 0
     high_score = load_high_score_from_file(HIGH_SCORE_FILE_NAME)
+
+    buzz_thread(1, BUZZ_SHOT_CLICK_FREQ_HZ)
 
     while True:
         selected_item_width = len(items[selector_index]) * 8
