@@ -19,8 +19,8 @@ SCREEN_HEIGHT = display.height
 REFRESH_RATE_MS = 33
 
 SHORT_CLICK_THR_MS = 260
-SPACE_THR_MS = 1050
-SEQUENCE_END_THR_MS = 2500
+SPACE_THR_MS = 600
+SEQUENCE_END_THR_MS = 1650
 
 MENU_CLICK_SHORT_THR_MS = 400
 MENU_CLICK_LONG_THR_MS = 500
@@ -53,8 +53,11 @@ ANIMATION_SPEED = 2
 SIGNAL_ANIMATION_MAX_RADIUS = 20
 HIGH_SCORE_FILE_NAME = 'morse_hs.txt'
 
-BUZZ_SHOT_CLICK_FREQ_HZ = 800
-BUZZ_SHOT_CLICK_DUR_MS = 200
+BUZZ_SHOT_CLICK_FREQ_HZ = 440
+BUZZ_SHOT_CLICK_DUR_MS = 65
+
+BUZZ_LONG_CLICK_FREQ_HZ = 440
+BUZZ_LONG_CLICK_DUR_MS = 250
 
 
 def buzz(duration_ms, frequency):
@@ -280,6 +283,7 @@ def main_menu_loop():
                     selector_index += 1
                     if selector_index > len(items) - 1:
                         selector_index = 0
+                    buzz_thread(BUZZ_SHOT_CLICK_DUR_MS, BUZZ_SHOT_CLICK_FREQ_HZ)
 
                 start_click = False
                 menu_selection_fill_width = 0
@@ -374,6 +378,7 @@ def draw_selector_fill_bar(x_pos, y_pos, selector_index, fill_width):
     if fill == 0:
         return
 
+    buzz_thread(int(REFRESH_RATE_MS/2), fill * 200)
     display.line(x, y, x + fill, y, 1)
     display.line(x, y + MENU_ITEM_MAX_HEIGHT + 3, x + fill, y + MENU_ITEM_MAX_HEIGHT + 3, 1)
 
@@ -471,6 +476,7 @@ def main_game_loop(difficulty, high_score, sound_on):
                 display.text(text, int((SCREEN_WIDTH - len(text) * 8)/2), 20, 1)
                 ge.add_points_upon_code_complete()
                 # TODO Here we need to highlight the points user got
+                # TODO - add a cool sound effect
                 display.show()
                 sleep_ms(1000)
                 break
@@ -482,6 +488,7 @@ def main_game_loop(difficulty, high_score, sound_on):
                 display.show()
                 sleep_ms(1000)
                 # TODO we need to show points reduction
+                # TODO - add a cool sound effect
                 break
 
             # now, we handle button inputs
@@ -496,8 +503,12 @@ def main_game_loop(difficulty, high_score, sound_on):
                     delta = time.ticks_diff(time.ticks_ms(), start_click_tick)
                     if delta <= SHORT_CLICK_THR_MS:
                         ge.register_code_input(SHORT_SYMBOL)
+                        if sound_on:
+                            buzz_thread(BUZZ_SHOT_CLICK_DUR_MS, BUZZ_SHOT_CLICK_FREQ_HZ)
                     else:
                         ge.register_code_input(LONG_SYMBOL)
+                        if sound_on:
+                            buzz_thread(BUZZ_LONG_CLICK_DUR_MS, BUZZ_LONG_CLICK_FREQ_HZ)
 
                     start_click = False
                     end_click_tick = time.ticks_ms()
