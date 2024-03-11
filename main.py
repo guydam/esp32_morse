@@ -48,27 +48,73 @@ GAME_TIMER_S = 30
 EASY_POINTS_MODIFY = 3
 HARD_POINTS_MODIFY = 5
 
-GAME_OVER_SPLASH_SCREEN_DISPLAY_MS = 3500
+GAME_OVER_SPLASH_SCREEN_DISPLAY_MS = 3000
 ANIMATION_SPEED = 2
 SIGNAL_ANIMATION_MAX_RADIUS = 20
 HIGH_SCORE_FILE_NAME = 'morse_hs.txt'
 
-BUZZ_SHOT_CLICK_FREQ_HZ = 440
-BUZZ_SHOT_CLICK_DUR_MS = 65
+BUZZ_MENU_SHORT_CLICK_FREQ_HZ = 1220
+
+BUZZ_SHORT_CLICK_FREQ_HZ = 440
+BUZZ_SHORT_CLICK_DUR_MS = 65
 
 BUZZ_LONG_CLICK_FREQ_HZ = 440
 BUZZ_LONG_CLICK_DUR_MS = 250
 
+BUZZ_DEFAULT_DUTY = 512
 
-def buzz(duration_ms, frequency):
+
+def buzz(duration_ms, frequency, volume=BUZZ_DEFAULT_DUTY):
     buzzer_pwm.freq(frequency)
-    buzzer_pwm.duty(512)
+    buzzer_pwm.duty(volume)
     sleep_ms(duration_ms)
     buzzer_pwm.duty(0)
 
 
-def buzz_thread(duration_ms, frequency):
-    _thread.start_new_thread(buzz, (duration_ms, frequency))
+def buzz_thread(duration_ms, frequency, volume=BUZZ_DEFAULT_DUTY):
+    _thread.start_new_thread(buzz, (duration_ms, frequency, volume))
+
+
+def buzz_success():
+    # buzz(150, round(261.63 * 2 ** ((4 - 4) / 12)), volume=int(0.5*BUZZ_DEFAULT_DUTY))  # C4 (softer, shorter)
+    # sleep_ms(50)  # Longer pause for a more drawn-out feel
+    # buzz(100, round(293.66 * 2 ** ((4 - 4) / 12)), volume=int(0.7*BUZZ_DEFAULT_DUTY))  # D4 (slightly louder, shorter)
+    # sleep_ms(100)  # Longer pause for a more drawn-out feel
+    # buzz(200, round(329.63 * 2 ** ((4 - 4) / 12)), volume=int(0.8*BUZZ_DEFAULT_DUTY))  # E4 (louder, shortest)
+
+     # buzz(100, round(261.63 * 2 ** ((4 - 4) / 12)), volume=int(0.5*BUZZ_DEFAULT_DUTY))  # C4 (shorter, softer)
+    # buzz(75, round(329.63 * 2 ** ((4 - 4) / 12)), volume=int(0.5*BUZZ_DEFAULT_DUTY))  # E4 (even shorter, slightly louder)
+    # # Emphasize the final note with a longer duration and increased volume
+    # buzz(150, round(392.00 * 2 ** ((4 - 4) / 12)), volume=int(0.5*BUZZ_DEFAULT_DUTY))  # G4 (longer, loudest)
+    # # Add a short, higher grace note for an extra touch of joy
+    # buzz(50, round(440.00 * 2 ** ((4 - 4) / 12)), volume=int(0.5*BUZZ_DEFAULT_DUTY))  # A4 (shortest, softer)
+
+    # Upward arpeggio with a triumphant feel (C4 - E4 - G4 - C5)
+    # Start with a short, lower note for anticipation
+    buzz(100, round(261.63 * 2 ** ((4 - 4) / 12)), volume=int(0.5*BUZZ_DEFAULT_DUTY))  # C4 (shorter, softer)
+    # Rising notes with increasing volume and duration for a sense of accomplishment
+    buzz(125, round(329.63 * 2 ** ((4 - 4) / 12)), volume=int(0.5*BUZZ_DEFAULT_DUTY))  # E4 (slightly longer, louder)
+    buzz(150, round(392.00 * 2 ** ((4 - 4) / 12)), volume=int(0.5*BUZZ_DEFAULT_DUTY))  # G4 (longer, even louder)
+    buzz(200, round(523.25 * 2 ** ((4 - 4) / 12)), volume=int(0.4*BUZZ_DEFAULT_DUTY))  # C5 (longest, loudest)
+
+
+def buzz_failure():
+
+    # buzz(200, round(329.63 * 2 ** ((4 - 4) / 12)))  # E4 (longer)
+    # buzz(100, round(261.63 * 2 ** ((4 - 4) / 12)))  # C4 (short)
+    # buzz(300, round(220.00 * 2 ** ((3 - 4) / 12)))  # A3 (longest)
+
+    buzz(200, round(277.18 * 2 ** ((4 - 4) / 12)), volume=int(0.6*BUZZ_DEFAULT_DUTY))  # C#4 (softer, longer)
+    sleep_ms(50)  # Longer pause for a more drawn-out feel
+    buzz(150, round(261.63 * 2 ** ((4 - 4) / 12)), volume=int(0.5*BUZZ_DEFAULT_DUTY))  # C4 (softer, shorter)
+    sleep_ms(100)  # Even longer pause for emphasis
+    buzz(250, round(246.94 * 2 ** ((3 - 4) / 12)), volume=int(0.7*BUZZ_DEFAULT_DUTY))  # B3 (slightly louder, longer)
+
+
+def buzz_game_over():
+    buzz(300, round(392.00 * 2 ** ((4 - 4) / 12)), volume=int(0.6*BUZZ_DEFAULT_DUTY))  # G4 (longer, slightly loud)
+    buzz(200, round(329.63 * 2 ** ((4 - 4) / 12)), volume=int(0.5*BUZZ_DEFAULT_DUTY))  # E4 (medium duration, softer)
+    buzz(500, round(261.63 * 2 ** ((4 - 4) / 12)), volume=int(0.4*BUZZ_DEFAULT_DUTY))  # C4 (longest, softest)
 
 
 class GameEngine:
@@ -239,7 +285,7 @@ def main_menu_loop():
     start_click_tick = 0
     high_score = load_high_score_from_file(HIGH_SCORE_FILE_NAME)
 
-    buzz_thread(1, BUZZ_SHOT_CLICK_FREQ_HZ)
+    buzz_thread(1, BUZZ_MENU_SHORT_CLICK_FREQ_HZ)
 
     while True:
         selected_item_width = len(items[selector_index]) * 8
@@ -257,7 +303,7 @@ def main_menu_loop():
                 global line_length
                 line_length = 0
 
-        draw_main_menu(int(SCREEN_WIDTH / 2 - 20), 35, items, selector_index, menu_selection_fill_width, high_score,
+        draw_main_menu(int(SCREEN_WIDTH / 2 - 15), 35, items, selector_index, menu_selection_fill_width, high_score,
                        game_sound)
 
         sleep_ms(REFRESH_RATE_MS)
@@ -283,16 +329,14 @@ def main_menu_loop():
                     selector_index += 1
                     if selector_index > len(items) - 1:
                         selector_index = 0
-                    buzz_thread(BUZZ_SHOT_CLICK_DUR_MS, BUZZ_SHOT_CLICK_FREQ_HZ)
+                    if game_sound:
+                        buzz_thread(BUZZ_SHORT_CLICK_DUR_MS, BUZZ_MENU_SHORT_CLICK_FREQ_HZ)
 
                 start_click = False
                 menu_selection_fill_width = 0
 
 
-def draw_main_menu(x_pos, y_pos, items, selector_index, menu_selection_fill_width, high_score, sound):
-    sound_text = SOUND_TEXT_ON
-    if not sound:
-        sound_text = SOUND_TEXT_OFF
+def draw_main_menu(x_pos, y_pos, items, selector_index, menu_selection_fill_width, high_score, sound_on):
     display.fill(0)
     draw_frame()
 
@@ -302,12 +346,34 @@ def draw_main_menu(x_pos, y_pos, items, selector_index, menu_selection_fill_widt
         y += MAIN_MENU_TEXT_PAD
 
     draw_menu_selector(x_pos, y_pos, selector_index)
-    draw_selector_fill_bar(x_pos, y_pos, selector_index, menu_selection_fill_width)
+    draw_selector_fill_bar(x_pos, y_pos, selector_index, menu_selection_fill_width, sound_on)
     draw_signal_tower()
     draw_highscore(high_score)
     draw_menu_title()
+    # draw_sound_icon(SCREEN_WIDTH - 16, 4, 12, sound_on)
     display.show()
 
+
+def draw_sound_icon(x_pos, y_pos, size, sound_on):
+    # sound_on = False
+    y_div = int(size / 3)
+    x_div = int(size / 2)
+    x_offset = int(size / 6) + 1
+
+    if sound_on:
+        display.fill_rect(x_pos + x_offset, y_pos + y_div, x_div, y_div, 1)
+
+        for i in range(y_div-1):
+            display.line(x_pos + x_div + i, y_pos + y_div - i, x_pos + x_div + i, y_pos + 2*y_div + i, 1)
+    else:
+        display.line(x_pos + x_offset, y_pos + y_div, x_pos + x_offset + x_div, y_pos + y_div, 1)
+        display.line(x_pos + x_offset, y_pos + y_div, x_pos + x_offset, y_pos + 2*y_div, 1)
+        display.line(x_pos + x_div, y_pos + y_div, x_pos + x_div, y_pos + 2*y_div, 1)
+        display.line(x_pos + x_offset, y_pos + 2*y_div, x_pos + x_offset + x_div, y_pos + 2*y_div, 1)
+
+        display.line(x_pos + x_div, y_pos + y_div, x_pos + 2*x_div, y_pos, 1)
+        display.line(x_pos + 2*x_div, y_pos, x_pos + 2*x_div, y_pos + 3*y_div, 1)
+        display.line(x_pos + x_div, y_pos + 2*y_div, x_pos + 2 * x_div, y_pos + 3*y_div, 1)
 
 line_length = 0
 def draw_menu_title():
@@ -371,14 +437,14 @@ def draw_menu_selector(x_pos, y_pos, selector_index):
     display.line(x, y + 4, x + 4, y + 2, 1)
 
 
-def draw_selector_fill_bar(x_pos, y_pos, selector_index, fill_width):
+def draw_selector_fill_bar(x_pos, y_pos, selector_index, fill_width, sound_on):
     x = x_pos
     y = y_pos + selector_index * MAIN_MENU_TEXT_PAD - 3
     fill = int(fill_width)
     if fill == 0:
         return
-
-    buzz_thread(int(REFRESH_RATE_MS/2), fill * 200)
+    if sound_on:
+        buzz_thread(int(REFRESH_RATE_MS/2), fill * 200)
     display.line(x, y, x + fill, y, 1)
     display.line(x, y + MENU_ITEM_MAX_HEIGHT + 3, x + fill, y + MENU_ITEM_MAX_HEIGHT + 3, 1)
 
@@ -462,7 +528,7 @@ def main_game_loop(difficulty, high_score, sound_on):
             # if time is up - show splash and kill the game
             if elapsed_sec > GAME_TIMER_S:
                 ge.register_expired_timer()
-                draw_end_game_splash_screen(ge)
+                draw_end_game_splash_screen(ge, sound_on)
                 if ge.points > high_score:
                     save_high_score_to_file(HIGH_SCORE_FILE_NAME, ge.points)
                 break
@@ -476,19 +542,27 @@ def main_game_loop(difficulty, high_score, sound_on):
                 display.text(text, int((SCREEN_WIDTH - len(text) * 8)/2), 20, 1)
                 ge.add_points_upon_code_complete()
                 # TODO Here we need to highlight the points user got
-                # TODO - add a cool sound effect
+                sleep_ms(100)
                 display.show()
-                sleep_ms(1000)
+                if sound_on:
+                    buzz_success()
+                else:
+                    sleep_ms(400)
+                sleep_ms(300)
                 break
 
             if ge.is_code_wrong():
                 text = "-" + random.choice(NEGATIVE_WORDS) + "-"
                 display.text(text, int((SCREEN_WIDTH - len(text) * 8)/2), 20, 1)
                 ge.reduce_points_upon_wrong_code()
+                sleep_ms(100)
                 display.show()
-                sleep_ms(1000)
+                if sound_on:
+                    buzz_failure()
+                else:
+                    sleep_ms(400)
+                sleep_ms(300)
                 # TODO we need to show points reduction
-                # TODO - add a cool sound effect
                 break
 
             # now, we handle button inputs
@@ -504,7 +578,7 @@ def main_game_loop(difficulty, high_score, sound_on):
                     if delta <= SHORT_CLICK_THR_MS:
                         ge.register_code_input(SHORT_SYMBOL)
                         if sound_on:
-                            buzz_thread(BUZZ_SHOT_CLICK_DUR_MS, BUZZ_SHOT_CLICK_FREQ_HZ)
+                            buzz_thread(BUZZ_SHORT_CLICK_DUR_MS, BUZZ_SHORT_CLICK_FREQ_HZ)
                     else:
                         ge.register_code_input(LONG_SYMBOL)
                         if sound_on:
@@ -539,7 +613,7 @@ def draw_game_screen(ge, code_x_pos, code_pixel_width, elapsed_sec):
     display.show()
 
 
-def draw_end_game_splash_screen(ge):
+def draw_end_game_splash_screen(ge, sound_on):
     splash_screen_start_tick = time.ticks_ms()
     delta = 0
     txt_x_pos = int((SCREEN_WIDTH - len(TIMES_UP_TEXT) * 8)/2)
@@ -549,7 +623,8 @@ def draw_end_game_splash_screen(ge):
     display.text(TIMES_UP_TEXT, txt_x_pos, 20, 1)
     display.text(score_txt, int((SCREEN_WIDTH - len(score_txt) * 8) / 2), SCREEN_HEIGHT - 20, 1)
     display.show()
-
+    if sound_on:
+        buzz_game_over()
     while delta <= GAME_OVER_SPLASH_SCREEN_DISPLAY_MS:
         delta = time.ticks_diff(time.ticks_ms(), splash_screen_start_tick)
         sleep_ms(REFRESH_RATE_MS)
