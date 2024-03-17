@@ -19,8 +19,10 @@ SCREEN_HEIGHT = display.height
 REFRESH_RATE_MS = 33
 
 SHORT_CLICK_THR_MS = 260
-SPACE_THR_MS = 600
-SEQUENCE_END_THR_MS = 1650
+SPACE_THR_MS_EASY = 600
+SPACE_THR_MS_HARD = 450
+SEQUENCE_END_THR_MS_EASY = 1450
+SEQUENCE_END_THR_MS_HARD = 1150
 
 MENU_CLICK_SHORT_THR_MS = 400
 MENU_CLICK_LONG_THR_MS = 500
@@ -146,10 +148,32 @@ class GameEngine:
         'Y': '-.--',
         'Z': '--..',
     }
-    easy_words = ["zap", "zip", "PTK", "jog", "CPU", "JER", "jar", "guy", "wax", "fox", "joe", "seq", "jay", "jig",
-                  "job", "fab", "bow", "tax", "use", "IDC"]
+    #TODO add tons of words here
+    easy_words = ["zap", "zip", "PTK", "jog", "CPU", "JER", "guy", "wax", "fox", "joe", "seq", "jay", "jig",
+                  "job", "fab", "bow", "tax", "use", "IDC", "man", "reg", "eps", "csr", "bug", "dev", "val",
+                  "ant", "bat", "bed", "can", "cup", "day", "dog", "eat", "eye", "fly",
+                  "fox", "god", "hat", "hip", "hit", "hue", "ink", "jar", "key", "law",
+                  "lie", "man", "mix", "mud", "nap", "nut", "oil", "old", "owe", "own",
+                  "pie", "pig", "pin", "pot", "put", "red", "saw", "sea", "set",
+                  "sew", "she", "sit", "six", "sky", "son", "sun", "tie", "tin", "use",
+                  "ace", "ago", "aid", "air", "all", "and", "arc", "arm", "art", "ask",
+                  "axe", "bad", "bay", "big", "bin", "bit", "box", "boy", "bus", "buy",
+                  "cab", "cap", "car", "cat", "cry", "cub", "cut", "dad", "dam", "day",
+                  "den", "did", "dig", "doe", "dug", "ear", "eat", "elf", "end", "eve",
+                  "eye", "far", "fat", "few", "fix", "fly", "foe", "fog", "for", "fun"
+                  ]
     hard_words = ["hello", "intel", "collect", "world", "forward", "option", "songs", "other", "system", "wifi",
-                  "point", "resume", "both", "support", "blue", "badge", "make"]
+                  "point", "resume", "both", "support", "blue", "badge", "make", "menu", "morse", "game", "about",
+                  "after", "again", "basic", "better", "could", "every", "first", "found", "great", "human", "known",
+                  "large", "learn", "never", "plant", "power", "quite", "ready", "really", "seems", "small", "sound",
+                  "space", "speak", "still", "study", "terms", "their", "think", "those", "three", "tools", "quite",
+                  "which", "whole", "world", "young", "yours", "cause", "color", "doubt", "early", "enjoy", "exist",
+                  "force", "found", "fresh", "glass", "grant", "happy", "heard", "horse", "house", "human", "humor",
+                  "image", "issue", "learn", "lunch", "maybe", "merry", "night", "noise", "offer", "often", "paint",
+                  "peace", "place", "plant", "power", "price", "quite", "ready", "teach", "thank", "think", "those",
+                  "touch", "train", "value", "visit", "watch", "white", "whole", "woman", "world", "young", "cause",
+                  "color", "doubt", "early", "enjoy", "exist", "force", "found", "fresh", "glass", "grant", "happy",
+                  "heard", "horse", "house", "humor"]
     wrong_code = False
     code_complete = False
     timer_expired = False
@@ -276,7 +300,7 @@ class GameEngine:
 
 
 def main_menu_loop():
-    game_sound = True
+    game_sound = False
     items = [MENU_ITEM_EASY, MENU_ITEM_HARD]
     selector_index = 0
     menu_selection_fill_width = 0
@@ -503,6 +527,9 @@ def main_game_loop(difficulty, high_score, sound_on):
     start_game_tick = time.ticks_ms()
     ge = GameEngine(difficulty)
 
+    space_threshold_ms = SPACE_THR_MS_EASY if difficulty == MENU_ITEM_EASY else SPACE_THR_MS_HARD
+    timeout_threshold_ms = SEQUENCE_END_THR_MS_EASY if difficulty == MENU_ITEM_EASY else SEQUENCE_END_THR_MS_HARD
+
     while True:
 
         if ge.is_game_over():
@@ -534,7 +561,7 @@ def main_game_loop(difficulty, high_score, sound_on):
                 break
 
             # first, we draw the screen
-            draw_game_screen(ge, code_x_pos, code_pixel_width, elapsed_sec)
+            draw_game_screen(ge, code_x_pos, elapsed_sec)
 
             # check if we completed the code sequence
             if ge.is_code_completed():
@@ -589,26 +616,24 @@ def main_game_loop(difficulty, high_score, sound_on):
                 # else, button is still unpressed from last tick
                 else:
                     delta = time.ticks_diff(time.ticks_ms(), end_click_tick)
-                    if delta > SPACE_THR_MS:
+                    if delta > space_threshold_ms:
                         if ge.is_code_input_started() and not ge.is_last_symbol_space():
                             ge.register_code_input(SPACE_SYMBOL)
 
-                    if delta > SEQUENCE_END_THR_MS:
+                    if delta > timeout_threshold_ms:
                         if ge.is_code_input_started():
                             ge.register_input_timeout()
 
             sleep_ms(REFRESH_RATE_MS)
 
 
-def draw_game_screen(ge, code_x_pos, code_pixel_width, elapsed_sec):
+def draw_game_screen(ge, code_x_pos, elapsed_sec):
     display.fill(0)
     draw_frame()
     draw_points(ge)
     draw_timer(elapsed_sec)
-    draw_word(ge, int(SCREEN_HEIGHT / 2))
+    draw_word(ge, int(SCREEN_HEIGHT / 2) + 2)
     draw_code_pixels(ge, code_x_pos, int(SCREEN_HEIGHT / 2) + 18)
-    # draw_progress_bar(ge, code_x_pos - 1, int(SCREEN_HEIGHT / 2) + 15, code_pixel_width - 3)
-    # display.text(seq_string, 30, 10, 1)
     draw_progress_bar(ge, code_x_pos, int(SCREEN_HEIGHT / 2) + 18)
     display.show()
 
@@ -658,7 +683,7 @@ def draw_timer(elapsed_sec):
 
 
 def draw_word(ge, y_pos):
-    x_pos = int((SCREEN_WIDTH - len(ge.word) * 10) / 2)
+    x_pos = int((SCREEN_WIDTH - len(ge.word) * 8) / 2)
     display.text(ge.word, x_pos, y_pos, 1)
 
 
